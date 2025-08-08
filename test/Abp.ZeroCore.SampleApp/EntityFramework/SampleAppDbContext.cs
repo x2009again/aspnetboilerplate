@@ -1,3 +1,4 @@
+using Abp.EntityFrameworkCore.Extensions;
 using Abp.Zero.EntityFrameworkCore;
 using Abp.ZeroCore.SampleApp.Core;
 using Abp.ZeroCore.SampleApp.Core.BookStore;
@@ -90,5 +91,10 @@ public class SampleAppDbContext : AbpZeroDbContext<Tenant, Role, User, SampleApp
         // Register custom entity which is not in DbContext
         modelBuilder.Entity(typeof(CustomEntity));
         modelBuilder.Entity(typeof(CustomEntityWithGuidId));
+        
+        // Add Index for TenantId fields for all entities that implement IMayHaveTenant or IMustHaveTenant
+        modelBuilder.AddMayHaveTenantIndex();
+        modelBuilder.AddMustHaveTenantIndex();
+
     }
 }

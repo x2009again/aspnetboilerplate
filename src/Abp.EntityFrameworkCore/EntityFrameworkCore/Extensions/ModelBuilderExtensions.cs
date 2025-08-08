@@ -1,5 +1,7 @@
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Abp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 
@@ -89,4 +91,41 @@ public static class ModelBuilderExtensions
 
         return modelBuilder;
     }
+
+    private static ModelBuilder AddTenantIdIndexForEntities<TInterface>(
+        this ModelBuilder modelBuilder, 
+        string propertyName)
+    {
+        var entityTypes = modelBuilder.Model.GetEntityTypes()
+            .Where(t => typeof(TInterface).IsAssignableFrom(t.ClrType))
+            .ToList();
+
+        foreach (var entityType in entityTypes)
+        {
+            var clrType = entityType.ClrType;
+            if (clrType.GetProperty(propertyName) != null)
+            {
+                modelBuilder.Entity(clrType)
+                    .HasIndex(propertyName);
+            }
+        }
+
+        return modelBuilder;
+    }
+
+    /// <summary>
+    /// Adds Index for TenantId fields for all entities that implement <see cref="IMayHaveTenant"/>.
+    /// </summary>
+    /// <param name="modelBuilder"></param>
+    /// <returns></returns>
+    public static ModelBuilder AddMayHaveTenantIndex(this ModelBuilder modelBuilder)
+        => modelBuilder.AddTenantIdIndexForEntities<IMayHaveTenant>(nameof(IMayHaveTenant.TenantId));
+
+    /// <summary>
+    /// Adds Index for TenantId fields for all entities that implement <see cref="IMustHaveTenant"/>.
+    /// </summary>
+    /// <param name="modelBuilder"></param>
+    /// <returns></returns>
+    public static ModelBuilder AddMustHaveTenantIndex(this ModelBuilder modelBuilder)
+        => modelBuilder.AddTenantIdIndexForEntities<IMustHaveTenant>(nameof(IMustHaveTenant.TenantId));
 }
